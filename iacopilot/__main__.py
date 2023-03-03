@@ -318,7 +318,7 @@ config openai [<KEY>]       Get or set configuration options
     cp.console.print(res.response)
 
 
-if __name__=="__main__":
+def main():
   cp = IaCopilot()
   readline.parse_and_bind("tab: complete")
   readline.set_completer(cp.tc.completer)
@@ -343,3 +343,7 @@ if __name__=="__main__":
   except (KeyboardInterrupt, SystemExit) as e:
     cp.console.print("[red]Exiting...[/]")
     sys.exit()
+
+
+if __name__=="__main__":
+  main()
