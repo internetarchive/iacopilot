@@ -298,24 +298,24 @@ config openai [<KEY>]       Get or set configuration options
 
   def get_openai_key(self):
     if not os.getenv("OPENAI_API_KEY"):
-      cp.console.print("[red]Set OpenAI API key obtained from https://beta.openai.com/account/api-keys[/]")
-      cp.console.print("Usage: [cyan]config openai[/] [magenta]<KEY>[/]")
+      self.console.print("[red]Set OpenAI API key obtained from https://beta.openai.com/account/api-keys[/]")
+      self.console.print("Usage: [cyan]config openai[/] [magenta]<KEY>[/]")
       return
     key = os.getenv("OPENAI_API_KEY")
-    cp.console.print(f"[cyan]OPENAI_API_KEY[/]: [magenta]{key}[/]")
+    self.console.print(f"[cyan]OPENAI_API_KEY[/]: [magenta]{key}[/]")
 
   def set_openai_key(self, key):
     os.environ["OPENAI_API_KEY"] = key
 
   def ask_gpt(self, p):
     if not self.id:
-      cp.console.print("[red]No context is set, load a new one or change to an exhisting one![/]")
+      self.console.print("[red]No context is set, load a new one or change to an exhisting one![/]")
       return
     idx = self.store[self.id]["index"]
     res = idx.query(p)
     self.queries += 1
     self.tokens += idx.llm_predictor.total_tokens_used
-    cp.console.print(res.response)
+    self.console.print(res.response)
 
 
 def main():
