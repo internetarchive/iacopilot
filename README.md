@@ -41,3 +41,15 @@ $
 ```
 
 Interact with the REPL!
+
+Alternatively, run in Docker as following:
+
+```
+$ docker image build -t iacopilot .
+
+$ docker container run --rm -it -e OPENAI_API_KEY="<APIKEY>" iacopilot
+Enter quit   to quit/exit this REPL prompt
+Enter help   to print the help message
+Press <TAB>  to see available commands
+IACopilot 0:0 ?>
+```
