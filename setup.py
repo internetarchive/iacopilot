@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name=__NAME,
+    name=__NAME.lower(),
     version=__VERSION,
     author="Sawood Alam",
     author_email="sawood@archive.org",

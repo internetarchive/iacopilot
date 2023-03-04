@@ -19,6 +19,11 @@ from requests.exceptions import HTTPError
 from rich.console import Console
 from urllib.parse import urlparse
 
+if not __package__:
+    sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from iacopilot import __NAME, __VERSION
+
 
 class TabCompleter():
   def __init__(self, msg=""):
@@ -99,9 +104,10 @@ config openai [<KEY>]       Get or set configuration options
       lines.append(f" {tb.join(tokens)}{sep}{des}")
     return "\n".join(lines)
 
-  def __init__(self, prefix="IACopilot", ps="[bold red]{prefix}[/] [magenta]{queries}:{tokens}[/] [cyan]{uri}[/]> "):
+  def __init__(self, name="IACopilot", version="0.0.0", ps="[bold red]{name}[/] [magenta]{queries}:{tokens}[/] [cyan]{uri}[/]> "):
     self.store = {}
-    self.prefix = prefix
+    self.name = name
+    self.version = version
     self.ps = ps
     self.queries = 0
     self.tokens = 0
@@ -123,7 +129,8 @@ config openai [<KEY>]       Get or set configuration options
   @property
   def prompt(self):
     params = {
-      "prefix": self.prefix,
+      "name": self.name,
+      "version": self.version,
       "queries": self.queries,
       "tokens": self.tokens if self.tokens < 1000 else f"{round(self.tokens / 1000)}k",
       "context": self.context,
@@ -145,6 +152,9 @@ config openai [<KEY>]       Get or set configuration options
 
   def print_help(self):
     self.console.print(self.pretty_help)
+
+  def print_version(self):
+    self.console.print(f"[cyan]{self.name}[/] [magenta]{self.version}[/]")
 
   def isurl(self, url):
     try:
@@ -265,7 +275,7 @@ config openai [<KEY>]       Get or set configuration options
       self.change_context(id)
       return
     FORMATS = ["DjVuTXT"]
-    dir = tempfile.mkdtemp(prefix=self.prefix)
+    dir = tempfile.mkdtemp(prefix=self.name)
     ia.download(identifier=id, destdir=dir, no_directory=True, formats=FORMATS)
     if not os.listdir(dir):
       self.console.print("[red]Item was not loaded![/]")
@@ -319,7 +329,13 @@ config openai [<KEY>]       Get or set configuration options
 
 
 def main():
-  cp = IaCopilot()
+  cp = IaCopilot(name=__NAME, version=__VERSION)
+  if {"-h", "--help", "help"}.intersection(sys.argv):
+    cp.print_help()
+    sys.exit()
+  if {"-v", "--version", "version"}.intersection(sys.argv):
+    cp.print_version()
+    sys.exit()
   readline.parse_and_bind("tab: complete")
   readline.set_completer(cp.tc.completer)
   cp.welcome()
