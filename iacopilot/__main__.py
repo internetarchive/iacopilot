@@ -319,7 +319,7 @@ config openai [<KEY>]       Get or set configuration options
 
   def ask_gpt(self, p):
     if not self.id:
-      self.console.print("[red]No context is set, load a new one or change to an exhisting one![/]")
+      self.console.print("[red]No context is set, load a new one or change to an existing one![/]")
       return
     idx = self.store[self.id]["index"]
     res = idx.query(p)
