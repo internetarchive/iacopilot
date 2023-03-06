@@ -8,7 +8,7 @@ Install IACopilot CLI tool:
 $ pip install iacopilot
 ```
 
-To run this tool, you will need [API key from OpenAI](https://platform.openai.com/account/api-keys) and set iot as an environment variable.
+To run this tool, you will need [API key from OpenAI](https://platform.openai.com/account/api-keys) and set it as an environment variable.
 
 ```
 $ OPENAI_API_KEY="<APIKEY>" iacopilot
