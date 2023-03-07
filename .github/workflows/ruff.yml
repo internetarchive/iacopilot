@@ -11,5 +11,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: pip install ruff
+    - run: pip install --user ruff
     - run: ruff --format=github --ignore=E501,E713,E722,F401,F841 .
