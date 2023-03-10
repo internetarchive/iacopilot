@@ -24,7 +24,6 @@ if not __package__:
 
 from iacopilot import __NAME, __VERSION
 
-
 class TabCompleter():
   def __init__(self, msg=""):
     self.tree = {}
@@ -272,6 +271,7 @@ config openai [<KEY>]       Get or set configuration options
 
   def load_ia(self, id):
     if id in self.store:
+      self.console.print("Loading from cached index.")
       self.change_context(id)
       return
     FORMATS = ["DjVuTXT"]
@@ -326,6 +326,7 @@ config openai [<KEY>]       Get or set configuration options
     self.queries += 1
     self.tokens += idx.llm_predictor.total_tokens_used
     self.console.print(res.response)
+    return str(res.response)
 
 
 def main():
