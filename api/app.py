@@ -1,31 +1,48 @@
-from flask import Flask, request, jsonify
-from iacopilot import __main__
+import functools
+import os
+import tempfile
 
-app = Flask(__name__)
+import internetarchive as ia
+
+from typing import Optional
+from fastapi import FastAPI, Query
+from fastapi.responses import JSONResponse
+from iacopilot import __main__
+from llama_index import GPTSimpleVectorIndex, LLMPredictor, SimpleDirectoryReader
+from langchain.llms import OpenAI
+
+
+app = FastAPI()
 copilot = __main__.IaCopilot()
 
-@app.route('/load_ia', methods=['POST'])
-def load_context():
-    data = request.json
-    id = data.get('id')
-    if id:
-        try:
-            copilot.load_ia(id)
-            return jsonify({'status': 'success'})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)})
+
+@functools.lru_cache(maxsize=64)
+def get_index(item_id: str) -> GPTSimpleVectorIndex:
+    index_json_dump = f"{item_id}.json"
+    if os.path.isfile(index_json_dump):
+        return GPTSimpleVectorIndex.load_from_disk(index_json_dump)
+    tmploc = tempfile.mkdtemp()
+    ia.download(item_id, destdir=tmploc, no_directory=True, formats="DjVuTXT")
+    if not os.listdir(tmploc):
+      return "Item was not loaded!"
+    docs = SimpleDirectoryReader(tmploc).load_data()
+    idx = GPTSimpleVectorIndex(docs, llm_predictor=LLMPredictor(llm=OpenAI(max_tokens=1024, model_name="text-davinci-003")))
+    idx.save_to_disk(index_json_dump)
+    return idx
+
+@app.get('/{item_id}')
+def query_item(item_id: str, prompt: Optional[str] = Query(default=None)):
+    idx = get_index(item_id)
+    if isinstance(idx, GPTSimpleVectorIndex):
+       if prompt:
+        answer = idx.query(prompt).response.strip()
+        return JSONResponse(content={'status': 'success', 'answer': answer})
+       else:
+        return JSONResponse(content={'status': 'success'})      
     else:
-        return jsonify({'status': 'error', 'message': 'ID parameter is missing'})
+        return JSONResponse(content={'status': 'error'})  
 
-@app.route('/query', methods=['POST'])
-def query():
-    data = request.get_json()
-    query = data['query']
+if __name__ == "__main__":
+    import uvicorn
 
-    answer = copilot.ask_gpt(query).strip()
-
-    return jsonify({'answer': answer})
-
-if __name__ == '__main__':
-    app.config['DEBUG'] = True
-    app.run()
+    uvicorn.run("api:app", host="0.0.0.0", reload=True, root_path=os.getenv("ROOT_PATH", "/"))
