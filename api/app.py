@@ -1,11 +1,11 @@
 import functools
 import os
 import tempfile
-import yaml
+import json
 
 import internetarchive as ia
 
-from typing import Union
+from typing import Union, List
 from enum import Enum
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import JSONResponse
@@ -65,16 +65,20 @@ def _get_index(item_id: str) -> GPTSimpleVectorIndex:
     idx.save_to_disk(index_json_dump)
     return idx
 
-def _load_and_query_item(item_id: str, prompt: Union[str, None] = None):
+def _load_and_query_item(item_id: str, prompt: Union[str, None] = None, answerType: str = "string"):
     idx = _get_index(item_id)
     if isinstance(idx, GPTSimpleVectorIndex):
        if prompt:
-        answer = idx.query(prompt).response.strip()
+        answer = idx.query(prompt).response
+        if answerType == "JSON":
+            answer = json.loads(answer)
+        else:
+            answer = answer.strip()
         return JSONResponse(content={"status": "success", "answer": answer})
        else:
-        return JSONResponse(content={"status": "success"})      
+        return JSONResponse(content={"status": "success"})
     else:
-        return JSONResponse(content={"status": "error"})  
+        return JSONResponse(content={"status": "error"})
 
 @app.get("/{item_id}", tags=["prompt"])
 def query_item_via_query_params(item_id: str, q: Union[str, None] = None):
@@ -83,6 +87,26 @@ def query_item_via_query_params(item_id: str, q: Union[str, None] = None):
 @app.post("/{item_id}", tags=["prompt"])
 def query_item_via_payload(item_id: str, payload: PromptQuery):
     return _load_and_query_item(item_id, payload.prompt)
+
+@app.get("/{item_id}/metadata")
+def query_item_metadata(item_id: str):
+    prompt = """Extract metadata from the book in the following format and return it in JSON format:
+    "title": Title of the book, 
+    "publishers": Publishers of the book in array format,
+    "authors": Authors of the book in array format,
+    "isbn": ISBN of the book,
+    "copyright_year": Copyright year of the book, 
+    "publication_year": Publication year of the book,
+    "summary": Summary of the book,
+    "topics": Topics of the book in array format,
+    "reading level": Flesch-Kincaid reading grade level of the book,
+    """
+    return _load_and_query_item(item_id, prompt, "JSON")
+
+@app.get("/{item_id}/summary")
+def query_item_summary(item_id: str):
+    prompt = "Summary of the book"
+    return _load_and_query_item(item_id, prompt)
 
 if __name__ == "__main__":
     import uvicorn
