@@ -2,6 +2,7 @@
 
 import io
 import json
+import logging
 import os
 import readline
 import shlex
@@ -13,8 +14,8 @@ import openai
 
 import internetarchive as ia
 
-from llama_index import GPTSimpleVectorIndex, GPTListIndex, Document, LLMPredictor, SimpleDirectoryReader
 from langchain.llms import OpenAI
+from llama_index import GPTSimpleVectorIndex, GPTListIndex, Document, LLMPredictor, SimpleDirectoryReader, ServiceContext
 from requests.exceptions import HTTPError
 from rich.console import Console
 from urllib.parse import urlparse
@@ -23,6 +24,10 @@ if not __package__:
     sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from iacopilot import __NAME, __VERSION
+
+
+logger = logging.getLogger("llama_index")
+logger.setLevel(logging.WARNING)
 
 
 class TabCompleter():
@@ -121,6 +126,7 @@ config openai [<KEY>]       Get or set configuration options
     for ch in self.TVCHANS:
       self.tc.add("load", "tv", ch)
     self.llmp = LLMPredictor(llm=OpenAI(max_tokens=1024, model_name="text-davinci-003"))
+    self.sctx = ServiceContext.from_defaults(llm_predictor=self.llmp)
 
   @property
   def uri(self):
@@ -281,7 +287,7 @@ config openai [<KEY>]       Get or set configuration options
       self.console.print("[red]Item was not loaded![/]")
       return
     docs = SimpleDirectoryReader(dir).load_data()
-    idx = GPTSimpleVectorIndex(docs, llm_predictor=self.llmp)
+    idx = GPTSimpleVectorIndex.from_documents(docs, service_context=self.sctx)
     ctx = {
       "context": "ia",
       "url": f"https://archive.org/details/{id}",
@@ -324,7 +330,7 @@ config openai [<KEY>]       Get or set configuration options
     idx = self.store[self.id]["index"]
     res = idx.query(p)
     self.queries += 1
-    self.tokens += idx.llm_predictor.total_tokens_used
+    self.tokens += idx.service_context.embed_model.total_tokens_used
     self.console.print(res.response)
 
 

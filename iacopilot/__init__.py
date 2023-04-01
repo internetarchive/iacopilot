@@ -1,2 +1,2 @@
 __NAME = "IACopilot"
-__VERSION = "0.1.2b1"
+__VERSION = "0.1.3b1"
